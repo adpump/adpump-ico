@@ -1,7 +1,6 @@
 pragma solidity ^0.4.18;
 
 import 'zeppelin-solidity/contracts/token/CappedToken.sol';
-import 'zeppelin-solidity/contracts/token/MintableToken.sol';
 
 contract AdpToken is CappedToken {
   string public name     = "AdpumpToken";

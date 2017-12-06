@@ -52,7 +52,7 @@ contract AdpCrowdsale is Crowdsale, Ownable {
 
     teamToken.mint(advisors,       tokensAvailable.div(40)); // 2.5% advisors
     token.mint(address(teamToken), tokensAvailable.div(40)); 
-    teamToken.mint(team,           tokensAvailable.div(10)); // 10% team
+    teamToken.mint(team,          tokensAvailable.div(10)); // 10% team
     token.mint(address(teamToken), tokensAvailable.div(10)); 
     teamToken.mint(adpump,         tokensAvailable.div(20)); // 5% adpump
     token.mint(address(teamToken), tokensAvailable.div(20)); 
@@ -87,8 +87,6 @@ contract AdpCrowdsale is Crowdsale, Ownable {
 
   // low level token purchase function
   function buyTokens(address beneficiary) public payable {
-    //super.buyTokens(beneficiary);
-
     uint256 weiAmount = msg.value;
 
     require(weiAmount >= (10 ** 17)); // 0.1 eth minimum 
@@ -107,6 +105,10 @@ contract AdpCrowdsale is Crowdsale, Ownable {
       }
     }
 
+    // sub tokensAvailable
+    require(tokensAvailable >= tokens);
+    tokensAvailable = tokensAvailable.sub(tokens);
+
     // update state
     weiRaised = weiRaised.add(weiAmount);
 
@@ -122,7 +124,7 @@ contract AdpCrowdsale is Crowdsale, Ownable {
     forwardFunds();
   }
 
-  function nextStage() public onlyOwner 
+  function nextStage() public onlyOwner returns (uint8)
   {
     uint256 tokensAvailableNew = 0;
     uint8 newStage = currentStage;
@@ -149,11 +151,10 @@ contract AdpCrowdsale is Crowdsale, Ownable {
     require(newStage != currentStage);
     currentStage = newStage;
     if (tokensAvailable > 0) {
-      token.mint(address(teamToken), tokensAvailable);
-      teamToken.mint(adpump, tokensAvailable);
       tokensAvailable = 0;
     }
     tokensAvailable = tokensAvailableNew;
+    return currentStage;
   }
 
   function createTokenContract() internal returns (MintableToken) 
