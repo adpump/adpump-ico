@@ -4,6 +4,9 @@ import './AdpTimelockToken.sol';
 
 contract AdpTeamToken is AdpTimelockToken {
 
+  string public name     = "AdpTeamToken";
+  string public symbol   = "ADPTT";
+
   mapping(address => uint256) released;
 
   function AdpTeamToken(MintableToken _token, uint256 _releaseTime) public 

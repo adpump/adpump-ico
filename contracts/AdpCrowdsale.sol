@@ -28,15 +28,17 @@ contract AdpCrowdsale is Crowdsale, Ownable {
   function AdpCrowdsale(uint256 _startTime, uint256 _endTime,
     uint256 _firstStageFinishTime, uint256 _secondStageFinishTime,
     uint256 _thirdStageFinishTime, uint256 _fourthStageFinishTime,
-    address _adpump, address _advisors, address _team, 
+    address _adpump, address _advisors, address _team, address _devteam,
     uint256 _rate, address _wallet) public
-    Crowdsale(_startTime, _endTime, _rate, _wallet)
+    Crowdsale(now, _endTime, _rate, _wallet)
   {
     require(_firstStageFinishTime  > _startTime);
     require(_secondStageFinishTime > _firstStageFinishTime);
     require(_thirdStageFinishTime  > _secondStageFinishTime);
     require(_fourthStageFinishTime > _thirdStageFinishTime);
     require(_endTime               > _fourthStageFinishTime);
+
+    startTime = _startTime;
 
     firstStageFinishTime = _firstStageFinishTime;
     secondStageFinishTime = _secondStageFinishTime;
@@ -51,11 +53,14 @@ contract AdpCrowdsale is Crowdsale, Ownable {
     teamToken     = new AdpTeamToken(token, firstStageFinishTime);
 
     teamToken.mint(advisors,       tokensAvailable.div(40)); // 2.5% advisors
-    token.mint(address(teamToken), tokensAvailable.div(40)); 
-    teamToken.mint(team,          tokensAvailable.div(10)); // 10% team
-    token.mint(address(teamToken), tokensAvailable.div(10)); 
+    token.mint(address(teamToken), tokensAvailable.div(40));
+
+    teamToken.mint(team,           tokensAvailable.mul(8).div(100)); 
+    teamToken.mint(_devteam,       tokensAvailable.div(50));         
+    token.mint(address(teamToken), tokensAvailable.div(10));       // 10% team
+
     teamToken.mint(adpump,         tokensAvailable.div(20)); // 5% adpump
-    token.mint(address(teamToken), tokensAvailable.div(20)); 
+    token.mint(address(teamToken), tokensAvailable.div(20));
 
     token.mint(wallet,     tokensAvailable.div(40)); // 2.5% bounty
 
@@ -64,24 +69,19 @@ contract AdpCrowdsale is Crowdsale, Ownable {
     currentStage = 1;
   }
 
-  function sendTokens(address beneficiary, uint256 tokens) public onlyOwner
+  function transfer(address _to, uint256 _value) public onlyOwner 
   {
-    mintTokens(beneficiary, tokens);
-  }
+    require(_to != address(0));
+    require(_value > 0);
+    require(tokensAvailable >= _value);
 
-  function mintTokens(address beneficiary, uint256 tokens) internal 
-  {
-    require(beneficiary != address(0));
-    require(tokens > 0);
-    require(tokensAvailable >= tokens);
-
-    tokensAvailable = tokensAvailable.sub(tokens);
+    tokensAvailable = tokensAvailable.sub(_value);
 
     if (currentStage == 1) {
-      token.mint(address(timelockToken), tokens);
-      timelockToken.mint(beneficiary, tokens);
+      token.mint(address(timelockToken), _value);
+      timelockToken.mint(_to, _value);
     } else {
-      token.mint(beneficiary, tokens);
+      token.mint(_to, _value);
     }
   }
 
@@ -93,7 +93,7 @@ contract AdpCrowdsale is Crowdsale, Ownable {
 
     // calculate token amount to be created
     uint256 tokens = weiAmount.mul(rate);
-    
+
     // add bonus if currentState is 1
     if (currentStage == 1) {
       if (msg.value >= 501 * (10 ** 18)) {
@@ -118,7 +118,7 @@ contract AdpCrowdsale is Crowdsale, Ownable {
     } else {
       token.mint(beneficiary, tokens);
     }
-    
+
     TokenPurchase(msg.sender, beneficiary, weiAmount, tokens);
 
     forwardFunds();

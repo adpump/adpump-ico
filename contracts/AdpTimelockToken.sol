@@ -16,17 +16,16 @@ contract AdpTimelockToken is MintableToken
   function AdpTimelockToken(MintableToken _token, uint256 _releaseTime) public 
   {
     require(_releaseTime > now);
-
     token = _token;
     releaseTime = _releaseTime;
   }
 
-  function release() public 
+  function release() public
   {
     releaseFrom(msg.sender);
   }
 
-  function releaseFrom(address beneficiary) public 
+  function releaseFrom(address beneficiary) public
   {
     require(beneficiary != address(0));
     require(now > releaseTime);
